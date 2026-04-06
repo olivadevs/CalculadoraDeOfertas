@@ -161,8 +161,11 @@ export default function App() {
       <div style={styles.container}>
         {/* Header */}
         <div style={styles.header}>
-          <div style={styles.headerBadge}>SUPER</div>
-          <h1 style={styles.title}>Calculadora<br />de Descuentos</h1>
+          <div style={styles.headerBrandingRow}>
+            <div style={styles.headerBadge}>Desarrollado por Oliva Devs</div>
+            <img src="/app-icon.png" alt="Oliva Devs" style={styles.headerBadgeIcon} />
+          </div>
+          <h1 style={styles.title}>Calculadora<br />de Ofertas</h1>
           <p style={styles.subtitle}>Encontrá la mejor oferta antes de llegar a la caja</p>
         </div>
 
@@ -367,16 +370,28 @@ const styles = {
     textAlign: "center",
     padding: "40px 0 28px",
   },
-  headerBadge: {
-    display: "inline-block",
-    background: "#f5c842",
-    color: "#0f4c35",
-    fontWeight: 900,
-    fontSize: 11,
-    letterSpacing: 3,
-    padding: "4px 12px",
-    borderRadius: 4,
+  headerBrandingRow: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 8,
     marginBottom: 12,
+  },
+  headerBadge: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 6,
+    background: "#fff",
+    color: "#0f4c35",
+    fontWeight: 700,
+    fontSize: 11,
+    letterSpacing: 1,
+    padding: "4px 12px",
+    borderRadius: 20,
+  },
+  headerBadgeIcon: {
+    width: 27,
+    height: 27,
+    objectFit: "contain",
   },
   title: {
     color: "#fff",
