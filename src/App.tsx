@@ -1,6 +1,36 @@
 import { useState, useCallback, useMemo } from "react";
 
-const DISCOUNTS = [
+// Tipo para cada configuración de descuento
+interface Discount {
+  id: string;
+  label: string;
+  sublabel: string;
+  icon: string;
+  calc: (price: number, qty: number) => number;
+  minQty: number;
+}
+
+// Tipo para cada resultado calculado
+interface DiscountResult {
+  id: string;
+  label: string;
+  sublabel: string;
+  icon: string;
+  finalPrice: number;
+  saved: number;
+  pct: string;
+  effectiveQty: number;
+}
+
+// Tipo para el estado de resultados
+interface CalcResult {
+  baseTotal: number;
+  results: DiscountResult[];
+  unitPrice: number;
+  qty: number;
+}
+
+const DISCOUNTS: Discount[] = [
   {
     id: "2x1",
     label: "2×1",
@@ -87,19 +117,20 @@ const DISCOUNTS = [
   },
 ];
 
-const fmt = (n) =>
+// Formatea número como moneda ARS
+const fmt = (n: number) =>
   n.toLocaleString("es-AR", { style: "currency", currency: "ARS", minimumFractionDigits: 2 });
 
 export default function App() {
   const [price, setPrice] = useState("");
   const [qty, setQty] = useState(1);
-  const [selected, setSelected] = useState([]);
-  const [result, setResult] = useState(null);
+  const [selected, setSelected] = useState<string[]>([]);
+  const [result, setResult] = useState<CalcResult | null>(null);
   const [bankDiscount, setBankDiscount] = useState(10);
   const [bankEnabled, setBankEnabled] = useState(false);
   const [customPct, setCustomPct] = useState(10);
 
-  const customDisc = useMemo(() => ({
+  const customDisc = useMemo<Discount>(() => ({
     id: "discCustom",
     label: `${customPct}% off`,
     sublabel: `Descuento directo ${customPct}%`,
@@ -108,7 +139,7 @@ export default function App() {
     minQty: 1,
   }), [customPct]);
 
-  const toggleDiscount = useCallback((id) => {
+  const toggleDiscount = useCallback((id: string) => {
     setSelected((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
     );
@@ -121,7 +152,7 @@ export default function App() {
 
     const effectiveBankDiscount = bankEnabled ? bankDiscount : 0;
     const baseTotal = p * qty;
-    let results;
+    let results: DiscountResult[];
 
     if (selected.length === 0) {
       const finalPrice = baseTotal * (1 - effectiveBankDiscount / 100);
@@ -130,7 +161,7 @@ export default function App() {
       results = [{ id: "bank-only", label: `${effectiveBankDiscount}% bancario`, sublabel: "Solo descuento bancario/billetera", icon: "🏦", finalPrice, saved, pct, effectiveQty: qty }];
     } else {
       results = selected.map((id) => {
-        const disc = [...DISCOUNTS, customDisc].find((d) => d.id === id);
+        const disc = [...DISCOUNTS, customDisc].find((d) => d.id === id)!;
         const effectiveQty = Math.max(qty, disc.minQty);
         const priceAfterPromo = disc.calc(p, effectiveQty);
         const priceAfterBank = priceAfterPromo * (1 - effectiveBankDiscount / 100);
@@ -143,7 +174,6 @@ export default function App() {
     results.sort((a, b) => a.finalPrice - b.finalPrice);
     setResult({ baseTotal, results, unitPrice: p, qty });
   };
-  
 
   const reset = () => {
     setPrice("");
@@ -169,7 +199,7 @@ export default function App() {
           <p style={styles.subtitle}>Encontrá la mejor oferta antes de llegar a la caja</p>
         </div>
 
-        {/* Price Input */}
+        {/* Entrada de precio */}
         <div style={styles.card}>
           <label style={styles.label}>💰 Precio de lista</label>
           <div style={styles.inputRow}>
@@ -192,8 +222,8 @@ export default function App() {
           </div>
         </div>
 
-       {/* Discount Options */}
-       <div style={styles.card}>
+        {/* Opciones de descuento */}
+        <div style={styles.card}>
           <label style={styles.label}>🏷️ Tipo de descuento</label>
           <p style={styles.hint}>Podés seleccionar uno o varios para comparar</p>
           <div style={styles.grid}>
@@ -215,7 +245,7 @@ export default function App() {
             })}
           </div>
 
-          {/* Slider de % directo */}
+          {/* Slider de porcentaje directo */}
           <div style={styles.sliderSection}>
             <div style={styles.sliderHeader}>
               <span style={styles.sliderTitle}>🏷️ % Descuento directo</span>
@@ -249,7 +279,7 @@ export default function App() {
           </div>
         </div>
 
-        {/* Bank / Wallet Discount */}
+        {/* Descuento bancario o billetera */}
         <div style={styles.card}>
           <label style={styles.label}>🏦 Descuento bancario o billetera</label>
           <p style={styles.hint}>Se aplica sobre el total final (Naranja X, Modo, Galicia, etc.)</p>
@@ -285,7 +315,7 @@ export default function App() {
           </div>
         </div>
 
-        {/* CTA */}
+        {/* Botón calcular */}
         <button
           style={{
             ...styles.calcBtn,
@@ -298,7 +328,7 @@ export default function App() {
           Calcular {numSelected > 0 ? `(${numSelected} descuento${numSelected > 1 ? "s" : ""})` : ""}
         </button>
 
-        {/* Results */}
+        {/* Resultados */}
         {result && (
           <div style={styles.resultsWrap} className="results-in">
             <h2 style={styles.resultsTitle}>Resultados</h2>
@@ -324,20 +354,20 @@ export default function App() {
                   </div>
                 </div>
                 <div style={styles.resultPriceRow}>
-  <div>
-    <div style={styles.resultPriceLabel}>Pagás (total)</div>
-    <div style={{ ...styles.resultPrice, ...(i === 0 ? styles.resultPriceBest : {}) }}>
-      {fmt(r.finalPrice)}
-    </div>
-    <div style={styles.resultPriceLabel}>
-      Precio por unidad: <strong style={{color: "#1a7a52"}}>{fmt(r.finalPrice / r.effectiveQty)}</strong>
-    </div>
-  </div>
-  <div style={styles.resultSaving}>
-    <div style={styles.savingPct}>−{r.pct}%</div>
-    <div style={styles.savingAmt}>Ahorrás {fmt(r.saved)}</div>
-  </div>
-</div>
+                  <div>
+                    <div style={styles.resultPriceLabel}>Pagás (total)</div>
+                    <div style={{ ...styles.resultPrice, ...(i === 0 ? styles.resultPriceBest : {}) }}>
+                      {fmt(r.finalPrice)}
+                    </div>
+                    <div style={styles.resultPriceLabel}>
+                      Precio por unidad: <strong style={{color: "#1a7a52"}}>{fmt(r.finalPrice / r.effectiveQty)}</strong>
+                    </div>
+                  </div>
+                  <div style={styles.resultSaving}>
+                    <div style={styles.savingPct}>−{r.pct}%</div>
+                    <div style={styles.savingAmt}>Ahorrás {fmt(r.saved)}</div>
+                  </div>
+                </div>
                 {r.effectiveQty !== result.qty && (
                   <p style={styles.noteQty}>* Calculado para {r.effectiveQty} unidades (mínimo de esta oferta)</p>
                 )}
@@ -354,7 +384,7 @@ export default function App() {
   );
 }
 
-const styles = {
+const styles: Record<string, React.CSSProperties> = {
   root: {
     minHeight: "100vh",
     background: "linear-gradient(135deg, #0f4c35 0%, #1a7a52 50%, #0d3d2b 100%)",
@@ -686,29 +716,6 @@ const styles = {
   bankToggleActive: {
     background: "#fff8e1",
     border: "2px solid #f5c842",
-    color: "#0f4c35",
-  },
-  bankRow: {
-    display: "flex",
-    gap: 8,
-    flexWrap: "wrap",
-  },
-  bankBtn: {
-    flex: "1 1 auto",
-    padding: "10px 6px",
-    borderRadius: 12,
-    border: "2.5px solid #e8e8e8",
-    background: "#f7f7f7",
-    fontWeight: 800,
-    fontSize: 14,
-    color: "#333",
-    cursor: "pointer",
-    transition: "all 0.18s",
-    fontFamily: "'Nunito', sans-serif",
-  },
-  bankBtnActive: {
-    background: "#fff8e1",
-    border: "2.5px solid #f5c842",
     color: "#0f4c35",
   },
 };
