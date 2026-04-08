@@ -433,6 +433,7 @@ const styles: Record<string, React.CSSProperties> = {
     margin: "0 0 8px",
     lineHeight: 1.15,
     letterSpacing: -0.5,
+    fontFamily: "'Plus Jakarta Sans', sans-serif",
   },
   subtitle: {
     color: "rgba(255,255,255,0.7)",
@@ -724,7 +725,7 @@ const styles: Record<string, React.CSSProperties> = {
 };
 
 const css = `
-  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&family=Space+Grotesk:wght@400;500&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&family=Space+Grotesk:wght@400;500&family=Plus+Jakarta+Sans:wght@500;600;700&display=swap');
   * { box-sizing: border-box; }
   body { margin: 0; }
   .mt { margin-top: 18px !important; }
