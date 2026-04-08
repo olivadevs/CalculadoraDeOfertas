@@ -192,7 +192,10 @@ export default function App() {
         {/* Header */}
         <div style={styles.header}>
           <div style={styles.headerBrandingRow}>
-            <div style={styles.headerBadge}>Desarrollado por Oliva Devs</div>
+            <div style={styles.headerBadge}>
+              <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 500 }}>Desarrollado por </span>
+              <span style={{ fontFamily: "'Instrument Serif', serif", fontStyle: "italic" }}>Oliva Devs</span>
+            </div>
             <img src="/app-icon.png" alt="Oliva Devs" style={styles.headerBadgeIcon} />
           </div>
           <h1 style={styles.title}>Calculadora<br />de Ofertas</h1>
@@ -721,7 +724,7 @@ const styles: Record<string, React.CSSProperties> = {
 };
 
 const css = `
-  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&family=Space+Grotesk:wght@400;500&display=swap');
   * { box-sizing: border-box; }
   body { margin: 0; }
   .mt { margin-top: 18px !important; }
