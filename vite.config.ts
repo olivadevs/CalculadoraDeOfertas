@@ -14,8 +14,8 @@ export default defineConfig({
       devOptions: { enabled: false },
 
       manifest: {
-        name: 'Oliva Devs',
-        short_name: 'Oliva',
+        name: 'Calculadora de Ofertas',
+        short_name: 'Calculadora',
         description: 'Calculadora de Ofertas — Oliva Devs',
         display: 'standalone',
         theme_color: '#3fb950',
