@@ -1,4 +1,7 @@
 import { useState, useCallback, useMemo } from "react";
+import { useCarrito } from "./hooks/useCarrito";
+import CarritoModal from "./components/CarritoModal";
+import BotonFlotanteCarrito from "./components/BotonFlotanteCarrito";
 
 // Tipo para cada configuración de descuento
 interface Discount {
@@ -130,6 +133,29 @@ export default function App() {
   const [bankEnabled, setBankEnabled] = useState(false);
   const [customPct, setCustomPct] = useState(10);
 
+  // Estado del módulo carrito
+  const carrito = useCarrito();
+  const [modalAbierto, setModalAbierto] = useState(false);
+  const [agregado, setAgregado] = useState(false);
+
+  // Agrega la mejor opción calculada al carrito con feedback visual breve
+  // y reinicia las selecciones de descuento para la siguiente consulta
+  const handleAgregar = () => {
+    if (!result) return;
+    const mejor = result.results[0];
+    carrito.agregar({
+      precioOriginal: result.unitPrice * mejor.effectiveQty,
+      precioFinal: mejor.finalPrice,
+    });
+    setAgregado(true);
+    setTimeout(() => {
+      setAgregado(false);
+      setSelected([]);
+      setCustomPct(10);
+      setResult(null);
+    }, 1500);
+  };
+
   const customDisc = useMemo<Discount>(() => ({
     id: "discCustom",
     label: `${customPct}% off`,
@@ -175,14 +201,7 @@ export default function App() {
     setResult({ baseTotal, results, unitPrice: p, qty });
   };
 
-  const reset = () => {
-    setPrice("");
-    setQty(1);
-    setSelected([]);
-    setResult(null);
-  };
-
-  const numSelected = selected.length;
+const numSelected = selected.length;
 
   return (
     <div style={styles.root}>
@@ -377,12 +396,39 @@ export default function App() {
               </div>
             ))}
 
-            <button style={styles.resetBtn} className="reset-btn" onClick={reset}>
-              Nueva consulta
+            {/* Botón para agregar la mejor opción al carrito */}
+            <button
+              style={{
+                ...styles.btnAgregar,
+                ...(agregado ? styles.btnAgregadoActivo : {}),
+              }}
+              className="btn-agregar"
+              onClick={handleAgregar}
+            >
+              {agregado ? "✓ Agregado" : "🛒 Agregar a la compra"}
             </button>
+
           </div>
         )}
       </div>
+
+      {/* Botón flotante del carrito */}
+      <BotonFlotanteCarrito
+        cantidadItems={carrito.items.length}
+        onClick={() => setModalAbierto(true)}
+      />
+
+      {/* Modal del carrito */}
+      {modalAbierto && (
+        <CarritoModal
+          items={carrito.items}
+          totalFinal={carrito.totalFinal}
+          totalAhorrado={carrito.totalAhorrado}
+          onEliminar={carrito.eliminar}
+          onVaciar={carrito.vaciar}
+          onCerrar={() => setModalAbierto(false)}
+        />
+      )}
     </div>
   );
 }
@@ -646,18 +692,23 @@ const styles: Record<string, React.CSSProperties> = {
   },
   savingAmt: { fontSize: 12, color: "#444", fontWeight: 700 },
   noteQty: { fontSize: 11, color: "#aaa", margin: "8px 0 0", fontStyle: "italic" },
-  resetBtn: {
+  btnAgregar: {
     width: "100%",
     padding: "14px",
-    background: "rgba(255,255,255,0.12)",
-    border: "2px solid rgba(255,255,255,0.3)",
+    background: "#3fb950",
+    border: "none",
     borderRadius: 14,
     fontSize: 15,
     fontWeight: 800,
     color: "#fff",
     cursor: "pointer",
-    marginTop: 6,
-    transition: "background 0.18s",
+    marginBottom: 10,
+    transition: "all 0.2s",
+    fontFamily: "'Nunito', sans-serif",
+  },
+  btnAgregadoActivo: {
+    background: "#2ea043",
+    transform: "scale(0.98)",
   },
   sliderSection: {
     marginTop: 16,
@@ -733,11 +784,13 @@ const css = `
   .disc-btn.active { transform: translateY(-1px); }
   .calc-btn:not(:disabled):hover { transform: translateY(-2px); box-shadow: 0 6px 28px rgba(245,200,66,0.5); }
   .calc-btn:not(:disabled):active { transform: translateY(0); }
-  .reset-btn:hover { background: rgba(255,255,255,0.2); }
-  .results-in { animation: slideUp 0.35s ease; }
+.results-in { animation: slideUp 0.35s ease; }
   .result-card { animation: fadeIn 0.3s ease both; }
   @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
   @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes subirModal { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  .btn-agregar:hover { filter: brightness(1.08); }
+  .btn-agregar:active { transform: scale(0.97); }
   input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
   .pct-slider { height: 6px; border-radius: 4px; }
   .pct-slider::-webkit-slider-thumb { width: 22px; height: 22px; border-radius: 50%; background: #1a7a52; border: 3px solid #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.2); cursor: pointer; -webkit-appearance: none; }
