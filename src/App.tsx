@@ -124,14 +124,117 @@ const DISCOUNTS: Discount[] = [
 const fmt = (n: number) =>
   n.toLocaleString("es-AR", { style: "currency", currency: "ARS", minimumFractionDigits: 2 });
 
+const fmtShort = (n: number) =>
+  "$ " + n.toLocaleString("es-AR", { maximumFractionDigits: 0 });
+
+// Stepper protagonista para descuento directo: ± paso 5, rango 5–95, badge de ahorro en vivo.
+function PercentSlider({ value, onChange, unitPrice, qty }: {
+  value: number; onChange: (v: number) => void; unitPrice: number; qty: number;
+}) {
+  const MIN = 5, MAX = 95, STEP = 5;
+  const clamp = (v: number) => Math.max(MIN, Math.min(MAX, v));
+  const pct = (value - MIN) / (MAX - MIN);
+  const savings = Math.max(0, unitPrice * qty * (value / 100));
+  return (
+    <div style={{ marginTop: 16, padding: "10px 10px 8px", background: "#f7f7f7", borderRadius: 12, border: "2px solid #e8e8e8" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+        <span style={{ fontWeight: 800, fontSize: 11, color: "#0f4c35", whiteSpace: "nowrap" }}>🏷️ Descuento directo</span>
+        {savings > 0 && (
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontFamily: "'Space Grotesk', sans-serif", fontSize: 10, fontWeight: 700, color: "#1a7a52", background: "rgba(63,185,80,0.14)", padding: "2px 8px", borderRadius: 999, whiteSpace: "nowrap" }}>
+            Ahorrás {fmtShort(savings)}
+          </span>
+        )}
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, background: "#fff", borderRadius: 10, padding: 8, border: "2px solid #e8e8e8" }}>
+        <button
+          onClick={() => onChange(clamp(value - STEP))}
+          disabled={value <= MIN}
+          style={{ width: 30, height: 30, borderRadius: 8, background: "#f0faf5", border: "none", color: "#0f4c35", fontWeight: 900, fontSize: 16, cursor: value <= MIN ? "not-allowed" : "pointer", opacity: value <= MIN ? 0.35 : 1, lineHeight: 1 }}
+        >−</button>
+        <div style={{ flex: 1, textAlign: "center", fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 900, fontSize: 24, letterSpacing: -0.7, lineHeight: 1, color: "#0f4c35" }}>
+          {value}<small style={{ fontSize: 11, fontWeight: 800, color: "#1a7a52", marginLeft: 2 }}>%</small>
+        </div>
+        <button
+          onClick={() => onChange(clamp(value + STEP))}
+          disabled={value >= MAX}
+          style={{ width: 30, height: 30, borderRadius: 8, background: "#f0faf5", border: "none", color: "#0f4c35", fontWeight: 900, fontSize: 16, cursor: value >= MAX ? "not-allowed" : "pointer", opacity: value >= MAX ? 0.35 : 1, lineHeight: 1 }}
+        >+</button>
+      </div>
+      <div style={{ marginTop: 8, height: 6, borderRadius: 999, background: "#e8e8e8", position: "relative", overflow: "hidden" }}>
+        <div style={{ position: "absolute", top: 0, bottom: 0, left: 0, width: `${pct * 100}%`, background: "linear-gradient(90deg, #3fb950, #1a7a52)", transition: "width 0.18s" }} />
+      </div>
+      <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "'Space Grotesk', sans-serif", fontSize: 9, color: "#aaa", marginTop: 4 }}>
+        <span>5%</span><span>25%</span><span>50%</span><span>75%</span><span>95%</span>
+      </div>
+    </div>
+  );
+}
+
+const BANK_TIERS = [10, 15, 20, 25, 30, 35];
+
+// Segmented snap para descuento bancario: tramos fijos + ahorro en vivo.
+function BankToggle({ enabled, onToggle, discount, onDiscountChange, unitPrice, qty }: {
+  enabled: boolean; onToggle: () => void;
+  discount: number; onDiscountChange: (v: number) => void;
+  unitPrice: number; qty: number;
+}) {
+  const base = unitPrice * qty;
+  const save = enabled ? base * (discount / 100) : 0;
+  const paid = base - save;
+  return (
+    <div style={{ marginTop: 16, padding: "14px 14px 12px", background: "#f7f7f7", borderRadius: 14, border: "2px solid #e8e8e8" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+        <span style={{ fontWeight: 800, fontSize: 13, color: "#0f4c35", whiteSpace: "nowrap" }}>
+          {enabled ? `🏦 Bancario · ${discount}%` : "🏦 Sin descuento bancario"}
+        </span>
+        <button onClick={onToggle} style={{ padding: "6px 14px", borderRadius: 20, border: `2px solid ${enabled ? "#f5c842" : "#e8e8e8"}`, background: enabled ? "#fff8e1" : "#f7f7f7", fontWeight: 800, fontSize: 13, color: enabled ? "#0f4c35" : "#888", cursor: "pointer", fontFamily: "'Nunito', sans-serif", transition: "all 0.18s", whiteSpace: "nowrap" }}>
+          {enabled ? "Activado ✓" : "Activar"}
+        </button>
+      </div>
+      {enabled && (
+        <>
+          <div style={{ display: "flex", height: 40, borderRadius: 10, background: "#fff", border: "2px solid #e8e8e8", overflow: "hidden" }}>
+            {BANK_TIERS.map((t, i) => {
+              const on = t === discount;
+              return (
+                <button key={t} onClick={() => onDiscountChange(t)} style={{ flex: 1, border: "none", borderLeft: i === 0 ? "none" : "1px dashed #e8e8e8", background: on ? "#f5c842" : "transparent", color: on ? "#0f4c35" : "#888", boxShadow: on ? "inset 0 0 0 2px #0f4c35" : "none", fontWeight: 800, fontSize: 13, fontFamily: "'Nunito', sans-serif", cursor: "pointer", transition: "all 0.18s" }}>
+                  {t}
+                </button>
+              );
+            })}
+          </div>
+          {base > 0 && (
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 10, padding: "8px 10px", background: "#fff", borderRadius: 10, border: "1px dashed #cfe6d9" }}>
+              <div style={{ fontSize: 11, color: "#666" }}>
+                Sobre <b style={{ color: "#0f4c35" }}>{fmtShort(base)}</b> con <b style={{ color: "#0f4c35" }}>{discount}%</b>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
+                <span style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 900, fontSize: 16, color: "#1a7a52", letterSpacing: -0.3, whiteSpace: "nowrap" }}>
+                  {"− " + fmtShort(save)}
+                </span>
+                <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 10, color: "#888", whiteSpace: "nowrap" }}>
+                  Pagás {fmtShort(paid)}
+                </span>
+              </div>
+            </div>
+          )}
+          <div style={{ marginTop: 8, fontFamily: "'Space Grotesk', sans-serif", fontSize: 10, color: "#888" }}>
+            Tramos comunes: 10 · 15 · 20 · 25 · 30 · 35
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function App() {
   const [price, setPrice] = useState("");
   const [qty, setQty] = useState(1);
   const [selected, setSelected] = useState<string[]>([]);
   const [result, setResult] = useState<CalcResult | null>(null);
-  const [bankDiscount, setBankDiscount] = useState(10);
+  const [bankDiscount, setBankDiscount] = useState(20);
   const [bankEnabled, setBankEnabled] = useState(false);
-  const [customPct, setCustomPct] = useState(10);
+  const [customPct, setCustomPct] = useState(20);
 
   // Estado del módulo carrito
   const carrito = useCarrito();
@@ -151,7 +254,7 @@ export default function App() {
     setTimeout(() => {
       setAgregado(false);
       setSelected([]);
-      setCustomPct(10);
+      setCustomPct(20);
       setResult(null);
     }, 1500);
   };
@@ -267,27 +370,14 @@ const numSelected = selected.length;
             })}
           </div>
 
-          {/* Slider de porcentaje directo */}
-          <div style={styles.sliderSection}>
-            <div style={styles.sliderHeader}>
-              <span style={styles.sliderTitle}>🏷️ % Descuento directo</span>
-              <span style={styles.sliderBadge}>{customPct}% off</span>
-            </div>
-            <input
-              type="range"
-              min={1}
-              max={99}
-              value={customPct}
-              onChange={(e) => {
-                setCustomPct(Number(e.target.value));
-                setResult(null);
-              }}
-              className="pct-slider"
-              style={styles.slider}
-            />
-            <div style={styles.sliderTicks}>
-              <span>1%</span><span>25%</span><span>50%</span><span>75%</span><span>99%</span>
-            </div>
+          {/* Descuento directo — stepper protagonista, paso 5 */}
+          <PercentSlider
+            value={customPct}
+            onChange={(v) => { setCustomPct(v); setResult(null); }}
+            unitPrice={parseFloat(price.replace(",", ".")) || 0}
+            qty={qty}
+          />
+          <div style={{ marginTop: 10 }}>
             <button
               style={{ ...styles.discBtn, ...styles.sliderToggle, ...(selected.includes("discCustom") ? styles.discBtnActive : {}) }}
               className={`disc-btn${selected.includes("discCustom") ? " active" : ""}`}
@@ -295,7 +385,7 @@ const numSelected = selected.length;
             >
               <span style={styles.discIcon}>{customDisc.icon}</span>
               <span style={styles.discLabel}>{customDisc.label}</span>
-              <span style={styles.discSub}>{customDisc.sublabel}</span>
+              <span style={{ ...styles.discSub, ...(selected.includes("discCustom") ? { paddingRight: 26 } : {}) }}>{customDisc.sublabel}</span>
               {selected.includes("discCustom") && <span style={styles.check}>✓</span>}
             </button>
           </div>
@@ -305,36 +395,14 @@ const numSelected = selected.length;
         <div style={styles.card}>
           <label style={styles.label}>🏦 Descuento bancario o billetera</label>
           <p style={styles.hint}>Se aplica sobre el total final (Naranja X, Modo, Galicia, etc.)</p>
-          <div style={styles.sliderSection}>
-            <div style={styles.sliderHeader}>
-              <span style={styles.sliderTitle}>
-                {bankEnabled ? `${bankDiscount}% de descuento` : "Sin descuento bancario"}
-              </span>
-              <button
-                style={{ ...styles.bankToggle, ...(bankEnabled ? styles.bankToggleActive : {}) }}
-                onClick={() => { setBankEnabled((v) => !v); setResult(null); }}
-              >
-                {bankEnabled ? "Activado ✓" : "Activar"}
-              </button>
-            </div>
-            {bankEnabled && (
-              <>
-                <input
-                  type="range"
-                  min={5}
-                  max={100}
-                  step={5}
-                  value={bankDiscount}
-                  onChange={(e) => { setBankDiscount(Number(e.target.value)); setResult(null); }}
-                  className="pct-slider"
-                  style={styles.slider}
-                />
-                <div style={styles.sliderTicks}>
-                  <span>5%</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span>
-                </div>
-              </>
-            )}
-          </div>
+          <BankToggle
+            enabled={bankEnabled}
+            onToggle={() => { setBankEnabled((v) => !v); setResult(null); }}
+            discount={bankDiscount}
+            onDiscountChange={(v) => { setBankDiscount(v); setResult(null); }}
+            unitPrice={parseFloat(price.replace(",", ".")) || 0}
+            qty={qty}
+          />
         </div>
 
         {/* Botón calcular */}
@@ -466,6 +534,7 @@ const styles: Record<string, React.CSSProperties> = {
     letterSpacing: 1,
     padding: "4px 12px",
     borderRadius: 20,
+    whiteSpace: "nowrap",
   },
   headerBadgeIcon: {
     width: 27,
@@ -776,7 +845,7 @@ const styles: Record<string, React.CSSProperties> = {
 };
 
 const css = `
-  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&family=Space+Grotesk:wght@400;500&family=Plus+Jakarta+Sans:wght@500;600;700&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Space+Grotesk:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap');
   * { box-sizing: border-box; }
   body { margin: 0; }
   .mt { margin-top: 18px !important; }
